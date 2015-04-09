@@ -1,6 +1,6 @@
 ##Reactive Messaging API
 
-The examples are primitive uses browser console as of now :smile:.
+The examples are primitive uses browser console as of now to print messages :smile:.
 The html files are used to load the javascript files. Too lazy to build sexy demo. Coming soon.
 The example outlines the couple of use cases and demonstrates how they are tackled using the tranditional library and the new messaging library (in conjunction with RxJS)
 
