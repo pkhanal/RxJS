@@ -6,7 +6,7 @@ The example outlines the couple of use cases and demonstrates how they are tackl
 
 ###Contents:
 
-- messaging-v2.js: A new messaging library prototype that provides higher level abstraction on top of Kaazing JMS Client Library. The library is Promise/A+ spec compliant and supports Reactive Extensions.
-- legacy-example.js: It provides an example using the traditional JMS Client Library.
-- example-v2.js: Example using new messaing library prototype and RxJS library.
+- **messaging-v2.js:** A new messaging library prototype that provides higher level abstraction on top of Kaazing JMS Client Library. The library is Promise/A+ spec compliant and supports Reactive Extensions.
+- **legacy-example.js:** It provides an example using the traditional JMS Client Library.
+- **example-v2.js:** Example using new messaing library prototype and RxJS library.
 
