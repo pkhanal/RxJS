@@ -84,4 +84,6 @@
         var messageElements = messageText.split(":");
         return parseInt(messageElements[2]);
     }
+
+
 })();
