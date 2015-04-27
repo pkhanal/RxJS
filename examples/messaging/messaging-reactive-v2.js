@@ -64,6 +64,7 @@
         }
 
         function sendMessage(message, $this) {
+            $this._sending = true;
             var sendFuture = $this._producer.send(message, function() {
                if (sendFuture.exception) {
                    // TODO: dispose observer?
@@ -75,7 +76,7 @@
                        }, 0);
                    }
                    else {
-                       this._sending = false;
+                       $this._sending = false;
                    }
                }
             });
@@ -84,12 +85,10 @@
         function onNext(message, $this) {
             // Send Text Message
             var textMessage = $this._session.createTextMessage(message);
-
             if ($this._sending) {
                 $this._messageQueue.push(textMessage);
             }
             else {
-                $this._sending = true;
                 sendMessage(textMessage, $this);
             }
         }
@@ -146,6 +145,7 @@
 
         function dispatchMessage(message, $this) {
             for (var i = 0; i < $this._observers.length; i++) {
+                // TODO: signal message payload only
                 $this._observers[i].onNext(message);
             }
         }

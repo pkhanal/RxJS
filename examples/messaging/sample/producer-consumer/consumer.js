@@ -28,12 +28,9 @@
             //    - Transform message object to a number representing the stock quote
             //    - Buffer all the quotes received over 5 seconds
             //    - Find maximum value among the buffered quotes and emit the maximum value
-            var appleStockObservable = messagingContext.newObservable("stock");
+            var appleStockObservable = messagingContext.newObservable("ticker.AAPL");
 
             appleStockObservable
-                .filter(function(message) {
-                    return message.getStringProperty("symbol") == "AAPL";
-                })
                 .map(getQuote)
                 .bufferWithTime(5000)
                 .flatMap(function(x) {
@@ -43,17 +40,17 @@
                     return Rx.Observable.fromArray(x).max(compare);
                 })
                 .subscribe(
-                function(message) {
-                    var message = "[" + new Date() + "]Maximum quote of Apple stock in last 5 seconds: " + message;
-                    console.log(message);
-                    $logger.innerHTML += message + '<BR />';
-                },
-                function(error) {
-                    var message = "error - " + error;
-                    console.log(message);
-                    $logger.innerHTML += message + '<BR />';
-                }
-            );
+                    function(message) {
+                        var message = "[" + new Date() + "]Maximum quote of Apple stock in last 5 seconds: " + message;
+                        console.log(message);
+                        $logger.innerHTML += message + '<BR />';
+                    },
+                    function(error) {
+                        var message = "error - " + error;
+                        console.log(message);
+                        $logger.innerHTML += message + '<BR />';
+                    }
+                );
         })
         .catch(
             function(error) {
@@ -75,8 +72,6 @@
 
     function getQuote(message) {
         // transform message object into a number that represents the stock quote
-        var messageText = message.getText();
-        var messageElements = messageText.split(":");
-        return parseInt(messageElements[2]);
+        return parseInt(message.getStringProperty("price"));
     }
 })();
