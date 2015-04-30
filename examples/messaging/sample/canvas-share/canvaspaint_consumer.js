@@ -10,31 +10,39 @@
         return;
     }
 
-    Kaazing.Messaging.createMessagingContext("ws://localhost:8001/jms")
-        .then(function(messagingContext) {
-            messagingContext.newObservable("canvas.drawing")
-                                .map(function(message) {
-                                    var messageText = message.getText();
-                                    return JSON.parse(messageText);
-                                })
-                                .subscribe(function(drawingInfo) {
-                                    drawingContext.moveTo(drawingInfo.first.offsetX, drawingInfo.first.offsetY);
-                                    drawingContext.lineTo(drawingInfo.second.offsetX, drawingInfo.second.offsetY);
-                                    drawingContext.stroke();
-                                });
+    var contextPromise = Kaazing.Messaging.newContext("ws://localhost:8001/jms");
 
-            messagingContext.newObservable("canvas.control")
-                                .map(function(message) {
-                                    return message.getText();
-                                })
-                                .subscribe(function(controlMessage) {
-                                    if (controlMessage === 'clear') {
-                                        drawingContext.clearRect(0, 0, canvas.width, canvas.height);
-                                        drawingContext.beginPath();
-                                    }
-                                });
+    contextPromise
+        .then(function(context) {
+            return context.newSubscriber("canvas.drawing");
         })
-        .catch(function(error) {
-            // TODO: handle error
+        .then(function(subscriber) {
+            subscriber
+                .map(function(message) {
+                    var messageText = message.getText();
+                    return JSON.parse(messageText);
+                })
+                .subscribe(function(drawingInfo) {
+                    drawingContext.moveTo(drawingInfo.first.offsetX, drawingInfo.first.offsetY);
+                    drawingContext.lineTo(drawingInfo.second.offsetX, drawingInfo.second.offsetY);
+                    drawingContext.stroke();
+                });
+        });
+
+    contextPromise
+        .then(function(context) {
+           return context.newSubscriber("canvas.control");
+        })
+        .then(function(subscriber) {
+            subscriber
+                .map(function(message) {
+                    return message.getText();
+                })
+                .subscribe(function(controlMessage) {
+                    if (controlMessage === 'clear') {
+                        drawingContext.clearRect(0, 0, canvas.width, canvas.height);
+                        drawingContext.beginPath();
+                    }
+                });
         });
 }());

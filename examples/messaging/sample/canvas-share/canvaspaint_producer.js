@@ -35,39 +35,41 @@
                             return down ? mouseMoveDiffStream : mouseMoveDiffStream.take(0);
                         });
 
-    paintStream.subscribe(
-        function(drawingInfo) {
-            drawingContext.moveTo(drawingInfo.first.offsetX, drawingInfo.first.offsetY);
-            drawingContext.lineTo(drawingInfo.second.offsetX, drawingInfo.second.offsetY);
-            drawingContext.stroke();
-        }
-    );
+    paintStream.subscribe(function(drawingInfo) {
+        drawingContext.moveTo(drawingInfo.first.offsetX, drawingInfo.first.offsetY);
+        drawingContext.lineTo(drawingInfo.second.offsetX, drawingInfo.second.offsetY);
+        drawingContext.stroke();
+    });
 
-    Kaazing.Messaging.createMessagingContext("ws://localhost:8001/jms")
-        .then(function(messagingContext) {
-            // Create Observer to signal drawing events
-            var canvasDrawingObserver = messagingContext.newObserver('canvas.drawing');
+    var clearEventStream = Rx.Observable.fromEvent(clear, 'click');
+    clearEventStream
+        .subscribe(function() {
+            drawingContext.clearRect(0, 0, canvas.width, canvas.height);
+            drawingContext.beginPath();
+        });
+
+    var contextPromise = Kaazing.Messaging.newContext("ws://localhost:8001/jms");
+
+    contextPromise
+        .then(function(context) {
+           return  context.newPublisher("canvas.drawing");
+        })
+        .then(function(publisher) {
             paintStream
                 .map(function(paintInfo) {
                     return JSON.stringify(paintInfo);
                 })
-                .subscribe(canvasDrawingObserver);
-
-
-            var clearEventStream = Rx.Observable.fromEvent(clear, 'click');
-            clearEventStream
-                .subscribe(function() {
-                    drawingContext.clearRect(0, 0, canvas.width, canvas.height);
-                    drawingContext.beginPath();
-                });
-
-            // Create Observer to signal control events
-            var canvasControlObserver = messagingContext.newObserver('canvas.control');
-            clearEventStream.map(function() { return "clear"; }).subscribe(canvasControlObserver);
-        })
-        .catch(function(error) {
-            // TODO: handle error
+                .subscribe(publisher);
         });
+
+    contextPromise
+        .then(function(context) {
+            return context.newPublisher("canvas.control");
+        })
+        .then(function(publisher) {
+            clearEventStream.map(function() { return "clear"; }).subscribe(publisher);
+        });
+
 
     // Calculate offset either layerX/Y or offsetX/Y
     function getOffset(event) {

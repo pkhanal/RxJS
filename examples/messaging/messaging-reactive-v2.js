@@ -9,7 +9,7 @@
     Kaazing.Messaging = Messaging;
     global.Kaazing = Kaazing;
 
-    Messaging.createMessagingContext = function(providerUrl) {
+    Messaging.newContext = function(providerUrl) {
 
         var _resolve, _reject;
 
@@ -139,17 +139,26 @@
             var topic = $this._session.createTopic("/topic/" + $this._channel);
             var consumer = $this._session.createConsumer(topic);
             consumer.setMessageListener(function(message) {
-                dispatchMessage(message, $this);
+                if (message instanceof TextMessage) {
+                    dispatchMessage(message.getText(), $this);
+                }
+                else if (message instanceof MapMessage) {
+                    var keys = message.getMapNames();
+                    var messageObj = {};
+                    for (var i=0; i<keys.length; i++) {
+                        var key = keys[i];
+                        messageObj[key] = message.getObject(key);
+                    }
+                    dispatchMessage(JSON.stringify(messageObj), $this);
+                }
             });
         }
 
         function dispatchMessage(message, $this) {
             for (var i = 0; i < $this._observers.length; i++) {
-                // TODO: signal message payload only
                 $this._observers[i].onNext(message);
             }
         }
-
 
         var $prototype = observableWrapper.prototype;
 
@@ -234,19 +243,40 @@
 
         var $prototype = context.prototype;
 
-        $prototype.newObserver = function(channel) {
+        $prototype.newPublisher = function(channel) {
+            var _resolve, _reject;
+
+            var promise = new Promise(function(resolve, reject) {
+                _resolve = resolve;
+                _reject = reject;
+            });
+
             var observerWrapper = new ObserverWrapper(this._session, channel);
             this._producers.push(observerWrapper);
-            return observerWrapper.getObserver();
+            setTimeout(function() {
+                _resolve(observerWrapper.getObserver());
+            }, 0);
+            return promise;
         };
 
-        $prototype.newObservable = function(channel) {
+        $prototype.newSubscriber = function(channel) {
+            var _resolve, _reject;
+
+            var promise = new Promise(function(resolve, reject) {
+                _resolve = resolve;
+                _reject = reject;
+            });
+
             var observableWrapper = new ObservableWrapper(this._session, channel);
             this._consumers.push(observableWrapper);
-            return observableWrapper.getObservable();
+            var observable = observableWrapper.getObservable();
+            setTimeout(function() {
+                _resolve(observable);
+            }, 0);
+            return promise;
         };
 
-        $prototype.close = function() {
+        $prototype.dispose = function() {
             var _resolve, _reject;
 
             var closePromise = new Promise(function(resolve, reject) {
