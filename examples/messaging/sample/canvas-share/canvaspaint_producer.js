@@ -48,28 +48,22 @@
             drawingContext.beginPath();
         });
 
-    var contextPromise = Kaazing.Messaging.newContext("ws://localhost:8001/jms");
-
-    contextPromise
+    Kaazing.Messaging.newContext("ws://localhost:8001/jms")
         .then(function(context) {
-           return  context.newPublisher("canvas.drawing");
-        })
-        .then(function(publisher) {
-            paintStream
-                .map(function(paintInfo) {
-                    return JSON.stringify(paintInfo);
-                })
-                .subscribe(publisher);
-        });
+           context.newPublisher("canvas.drawing")
+               .then(function(publisher) {
+                   paintStream
+                       .map(function(paintInfo) {
+                           return JSON.stringify(paintInfo);
+                       })
+                       .subscribe(publisher);
+               });
 
-    contextPromise
-        .then(function(context) {
-            return context.newPublisher("canvas.control");
-        })
-        .then(function(publisher) {
-            clearEventStream.map(function() { return "clear"; }).subscribe(publisher);
+            context.newPublisher("canvas.control")
+                .then(function(publisher) {
+                    clearEventStream.map(function() { return "clear"; }).subscribe(publisher);
+                });
         });
-
 
     // Calculate offset either layerX/Y or offsetX/Y
     function getOffset(event) {
